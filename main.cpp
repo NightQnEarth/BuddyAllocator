@@ -1,7 +1,12 @@
-#include <iostream>
+#include "BuddyMemoryAllocatorLibTests/TestsRunner.h"
 
-int main()
+#define TESTING
+
+int main(int argc, char* argv[])
 {
-    std::cout << "Hello, World!" << std::endl;
+#ifdef TESTING
+    return TestsRunner::run_tests(argc, argv);
+#endif
+
     return 0;
 }
