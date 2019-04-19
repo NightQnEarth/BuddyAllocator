@@ -1,0 +1,10 @@
+#ifndef BUDDYALLOCATOR_BLOCKSTATUS_H
+#define BUDDYALLOCATOR_BLOCKSTATUS_H
+
+enum BlockStatus
+{
+    Free,
+    Allocated
+};
+
+#endif //BUDDYALLOCATOR_BLOCKSTATUS_H

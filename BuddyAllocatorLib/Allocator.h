@@ -1,5 +1,5 @@
-#ifndef BUDDYMEMORYALLOCATOR_ALLOCATOR_H
-#define BUDDYMEMORYALLOCATOR_ALLOCATOR_H
+#ifndef BUDDYALLOCATOR_ALLOCATOR_H
+#define BUDDYALLOCATOR_ALLOCATOR_H
 #define MIN_POWER 5
 
 #include <cstddef>
@@ -18,4 +18,4 @@ private:
     // short powerOfTwo = MIN_POWER - 1; TODO: transfer to BlockHead creation
 };
 
-#endif //BUDDYMEMORYALLOCATOR_ALLOCATOR_H
+#endif //BUDDYALLOCATOR_ALLOCATOR_H

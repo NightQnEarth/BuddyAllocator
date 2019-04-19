@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 #include <gmock/gmock.h>
-#include "../BuddyMemoryAllocatorLib/Allocator.h"
+#include "../BuddyAllocatorLib/Allocator.h"
 
 class AllocatorDefinition : public testing::Test
 {
 public:
-    Allocator allocator;
+    Allocator allocator = Allocator(0);
 };
 
 TEST_F(AllocatorDefinition, empty_test)

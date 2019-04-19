@@ -1,4 +1,4 @@
-#include "BuddyMemoryAllocatorLibTests/TestsRunner.h"
+#include "BuddyAllocatorLibTests/TestsRunner.h"
 
 #define TESTING
 
