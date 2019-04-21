@@ -5,7 +5,7 @@
 class AllocatorDefinition : public testing::Test
 {
 public:
-    Allocator allocator = Allocator(0);
+    Allocator allocator = Allocator(1024);
 };
 
 TEST_F(AllocatorDefinition, empty_test)
