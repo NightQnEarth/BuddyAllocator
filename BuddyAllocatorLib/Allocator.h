@@ -18,11 +18,13 @@ public:
 private:
     size_t pullSize;
     short levelsCount;
-    MemoryBlock** freeBlocksLists;
-    long mask;
+    MemoryBlock** blocksList;
+    int* countOfFreeBlocksOnLevel;
 
     static short getNecessaryLevel(size_t memorySize);
-    MemoryBlock* findSuitableFreeBlocksList(short level);
+    MemoryBlock* findFreeBlockOnCustomLevel(short level);
+    MemoryBlock* splitOnBuddies(MemoryBlock* memoryBlock);
+    MemoryBlock* combineWithBuddy(MemoryBlock* memoryBlock);
 };
 
 #endif //BUDDYALLOCATOR_ALLOCATOR_H

@@ -2,10 +2,9 @@
 #include <iostream>
 #include <cmath>
 
-MemoryBlock::MemoryBlock(const short level, MemoryBlock* previous, MemoryBlock* next)
+MemoryBlock::MemoryBlock(const short level, MemoryBlock* next)
 {
     this->level = level;
-    this->previous = previous;
     this->next = next;
     status = BlockStatus::Free;
 
@@ -16,14 +15,4 @@ MemoryBlock::MemoryBlock(const short level, MemoryBlock* previous, MemoryBlock* 
 MemoryBlock::~MemoryBlock()
 {
     free(allocatedMemoryPtr);
-}
-
-void MemoryBlock::splitOnBuddies(MemoryBlock& firstBuddy, MemoryBlock& secondBuddy)
-{
-
-}
-
-MemoryBlock* MemoryBlock::unionWith(MemoryBlock* buddyBlock)
-{
-    return nullptr;
 }

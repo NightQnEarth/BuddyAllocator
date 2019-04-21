@@ -7,18 +7,16 @@
 class MemoryBlock
 {
 public:
-    MemoryBlock(short level, MemoryBlock* previous, MemoryBlock* next);
+    MemoryBlock(short level, MemoryBlock* next);
     ~MemoryBlock();
 
     BlockStatus status;
     short level;
-    MemoryBlock* previous;
+    MemoryBlock* previous = nullptr;
     MemoryBlock* next;
+    MemoryBlock* buddy = nullptr;
 
     void* allocatedMemoryPtr;
-
-    void splitOnBuddies(MemoryBlock& firstBuddy, MemoryBlock& secondBuddy);
-    MemoryBlock* unionWith(MemoryBlock* buddyBlock);
 };
 
 #endif //BUDDYALLOCATOR_MEMORYBLOCK_H
