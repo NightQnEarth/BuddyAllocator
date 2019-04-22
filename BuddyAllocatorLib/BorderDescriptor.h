@@ -3,9 +3,8 @@
 
 #include "BlockStatus.h"
 
-class BorderDescriptor
+struct BorderDescriptor
 {
-public:
     BorderDescriptor(void* memoryBlock, short level, int indexOnLevel);
 
     void* memoryBlock;

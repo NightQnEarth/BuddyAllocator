@@ -37,12 +37,22 @@ Allocator::~Allocator()
 
 void* Allocator::Allocate(size_t size)
 {
-    return nullptr;
+    short levelOfDesiredBlock = getNecessaryLevel(size);
+    BorderDescriptor* desiredDescriptor = findFreeBlockForCustomLevel(levelOfDesiredBlock);
+    while (desiredDescriptor->level > fmax(levelOfDesiredBlock, 0))
+        desiredDescriptor = splitOnBuddies(desiredDescriptor);
+
+    desiredDescriptor->status = BlockStatus::Reserved;
+    return desiredDescriptor->memoryBlock;
 }
 
 void Allocator::Free(void* blockPointer)
 {
+    BorderDescriptor* exemptedBlock = (BorderDescriptor*)blockPointer - 1;
+    exemptedBlock->status = BlockStatus::Free;
 
+    while (findAccessibleBuddyDescriptor(exemptedBlock) != nullptr)
+        exemptedBlock = tryToCombineWithBuddy(exemptedBlock);
 }
 
 void Allocator::Dump()
@@ -119,11 +129,19 @@ BorderDescriptor* Allocator::splitOnBuddies(BorderDescriptor* splitDescriptor)
     return firstBuddy;
 }
 
-BorderDescriptor* Allocator::tryToCombineWithBuddy(BorderDescriptor* descriptor)
+BorderDescriptor* Allocator::findAccessibleBuddyDescriptor(BorderDescriptor* descriptor)
 {
     BorderDescriptor* buddyDescriptor = descriptor->indexOnLevel % 2 == 0 ? descriptor->next : descriptor->previous;
 
-    if (descriptor->status != BlockStatus::Free || buddyDescriptor->status != BlockStatus::Free) return nullptr;
+    if (buddyDescriptor == nullptr || buddyDescriptor->status != BlockStatus::Free) return nullptr;
+}
+
+BorderDescriptor* Allocator::tryToCombineWithBuddy(BorderDescriptor* descriptor)
+{
+    BorderDescriptor* buddyDescriptor = findAccessibleBuddyDescriptor(descriptor);
+
+    if (descriptor->status != BlockStatus::Free || buddyDescriptor == nullptr)
+        return nullptr;
 
     short parentBlockLevel = descriptor->level + 1;
     BorderDescriptor* parentDescriptor = descriptorsList[parentBlockLevel];

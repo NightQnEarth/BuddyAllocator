@@ -28,6 +28,7 @@ private:
     static size_t getBlockSize(short level);
     BorderDescriptor* findFreeBlockForCustomLevel(short level);
     BorderDescriptor* splitOnBuddies(BorderDescriptor* splitDescriptor);
+    static BorderDescriptor* findAccessibleBuddyDescriptor(BorderDescriptor* descriptor);
     BorderDescriptor* tryToCombineWithBuddy(BorderDescriptor* descriptor);
 };
 
