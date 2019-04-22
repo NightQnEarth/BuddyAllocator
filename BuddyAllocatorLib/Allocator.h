@@ -18,7 +18,6 @@ public:
     void Dump();
 
 private:
-    size_t pullSize;
     void* memoryPool;
     short levelsCount;
     BorderDescriptor** descriptorsList;

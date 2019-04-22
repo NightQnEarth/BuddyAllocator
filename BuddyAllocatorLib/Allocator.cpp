@@ -2,10 +2,10 @@
 #include "BlockStatus.h"
 #include <cmath>
 #include <iostream>
+#include <iomanip>
 
 Allocator::Allocator(size_t pullSize)
 {
-    this->pullSize = pullSize;
     levelsCount = getNecessaryLevel(pullSize);
 
     descriptorsList = new BorderDescriptor*[levelsCount];
@@ -58,12 +58,46 @@ void Allocator::Free(void* blockPointer)
 
 void Allocator::Dump()
 {
+    using namespace std;
 
+    map<BlockStatus, string> statusStringMap = {
+            { BlockStatus::Free, "F" },
+            { BlockStatus::Reserved, "R" },
+            { BlockStatus::Split, "S" },
+            { BlockStatus::Unallocated, "U" }
+    };
+
+    auto blockLength = [](size_t level) -> size_t { return (getBlockSize(level) / getBlockSize(0)) * 2 + 1; };
+
+    for (int level = levelsCount - 1; level >= 0; --level)
+    {
+        if (countOfDescriptorsOnLevel[level] == 0) continue;
+
+        BorderDescriptor* descriptor = descriptorsList[level];
+
+        if (descriptor != nullptr)
+            cout << setfill('-') << setw(blockLength(levelsCount - 1)) << "-" << endl << setfill(' ');
+
+        while (descriptor != nullptr)
+        {
+            cout << '|' << setw(blockLength(descriptor->level) / 2) << statusStringMap[descriptor->status];
+            size_t width = blockLength(descriptor->level) / 2 - statusStringMap[descriptor->status].length();
+            cout << setw(width) << (width > 0 ? " " : "");
+
+            descriptor = descriptor->next;
+        }
+        cout << '|';
+        size_t width = blockLength(levelsCount - 1) - blockLength(level) * countOfDescriptorsOnLevel[level] + 1;
+        if (width > 1) cout << setw(width) << '|';
+        cout << " Level: " << level << ", size of one block: " << getBlockSize(level) << " bytes" << endl;
+    }
+
+    cout << setfill('-') << setw(blockLength(levelsCount - 1)) << "-" << endl << setfill(' ');
 }
 
 short Allocator::getNecessaryLevel(size_t memorySize)
 {
-    return std::fmax(ceil(log2(memorySize)) - MIN_POWER + 1, 0);
+    return fmax(ceil(log2(memorySize)) - MIN_POWER + 1, 0);
 }
 
 size_t Allocator::getBlockSize(short level)
