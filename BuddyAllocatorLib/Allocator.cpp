@@ -6,7 +6,7 @@
 
 Allocator::Allocator(size_t pullSize)
 {
-    levelsCount = getNecessaryLevel(pullSize);
+    levelsCount = getNecessaryLevel(pullSize) + 1;
 
     descriptorsList = new BorderDescriptor*[levelsCount];
     countOfDescriptorsOnLevel = new short[levelsCount];
@@ -44,6 +44,8 @@ void* Allocator::Allocate(size_t size)
         desiredDescriptor = splitOnBuddies(desiredDescriptor);
 
     desiredDescriptor->status = BlockStatus::Reserved;
+    countOfFreeBlocksOnLevel[desiredDescriptor->level]--;
+
     return desiredDescriptor->memoryBlock;
 }
 
@@ -51,6 +53,7 @@ void Allocator::Free(void* blockPointer)
 {
     BorderDescriptor* exemptedBlock = memoryDescriptorMap[blockPointer];
     exemptedBlock->status = BlockStatus::Free;
+    countOfFreeBlocksOnLevel[exemptedBlock->level]++;
 
     while (findAccessibleBuddyDescriptor(exemptedBlock) != nullptr)
         exemptedBlock = tryToCombineWithBuddy(exemptedBlock);
@@ -97,7 +100,8 @@ void Allocator::Dump()
 
 short Allocator::getNecessaryLevel(size_t memorySize)
 {
-    return fmax(ceil(log2(memorySize)) - MIN_POWER + 1, 0);
+    if (memorySize == 0) std::__throw_out_of_range("Can not allocate zero bytes.");
+    return fmax(ceil(log2(memorySize)) - MIN_POWER, 0);
 }
 
 size_t Allocator::getBlockSize(short level)
