@@ -1,7 +1,8 @@
 #ifndef BUDDYALLOCATOR_ALLOCATOR_H
 #define BUDDYALLOCATOR_ALLOCATOR_H
+#define MIN_POWER 5
 
-#include "MemoryBlock.h"
+#include "BorderDescriptor.h"
 #include <cstddef>
 
 class Allocator
@@ -17,14 +18,17 @@ public:
 
 private:
     size_t pullSize;
+    void* memoryPool;
     short levelsCount;
-    MemoryBlock** blocksList;
-    int* countOfFreeBlocksOnLevel;
+    BorderDescriptor** descriptorsList;
+    short* countOfDescriptorsOnLevel;
+    short* countOfFreeBlocksOnLevel;
 
     static short getNecessaryLevel(size_t memorySize);
-    MemoryBlock* findFreeBlockOnCustomLevel(short level);
-    MemoryBlock* splitOnBuddies(MemoryBlock* memoryBlock);
-    MemoryBlock* combineWithBuddy(MemoryBlock* memoryBlock);
+    static size_t getBlockSize(short level);
+    BorderDescriptor* findFreeBlockOnCustomLevel(short level);
+    BorderDescriptor* splitOnBuddies(BorderDescriptor* splitDescriptor);
+    BorderDescriptor* combineWithBuddy(BorderDescriptor* memoryBlock);
 };
 
 #endif //BUDDYALLOCATOR_ALLOCATOR_H

@@ -8,21 +8,31 @@ Allocator::Allocator(size_t pullSize)
 {
     this->pullSize = pullSize;
     levelsCount = getNecessaryLevel(pullSize);
-    blocksList = new MemoryBlock*[levelsCount];
-    blocksList[levelsCount - 1] = new MemoryBlock(levelsCount, nullptr); // TODO: Delete malloc from MemoryBlock. Just one allocation.
-    countOfFreeBlocksOnLevel = new int[levelsCount];
+
+    descriptorsList = new BorderDescriptor*[levelsCount];
+    countOfDescriptorsOnLevel = new short[levelsCount];
+    countOfFreeBlocksOnLevel = new short[levelsCount];
+
+    memoryPool = malloc((size_t)pow(2, levelsCount));
+
+    descriptorsList[levelsCount - 1] = new BorderDescriptor(memoryPool, levelsCount, 0);
+    countOfDescriptorsOnLevel[levelsCount - 1] = 1;
     countOfFreeBlocksOnLevel[levelsCount - 1] = 1;
 
-    for (int i = 0; i < levelsCount - 1; ++i)
+    for (short i = 0; i < levelsCount - 1; ++i)
     {
-        blocksList[i] = nullptr;
+        descriptorsList[i] = nullptr;
         countOfFreeBlocksOnLevel[i] = 0;
+        countOfDescriptorsOnLevel[i] = 0;
     }
 }
 
 Allocator::~Allocator()
 {
-    delete[](blocksList);
+    free(memoryPool);
+    delete[](descriptorsList);
+    delete[](countOfDescriptorsOnLevel);
+    delete[](countOfFreeBlocksOnLevel);
 }
 
 void* Allocator::Allocate(size_t size)
@@ -45,54 +55,74 @@ short Allocator::getNecessaryLevel(size_t memorySize)
     return std::fmax(ceil(log2(memorySize)) - MIN_POWER + 1, 0);
 }
 
-MemoryBlock* Allocator::findFreeBlockOnCustomLevel(short level)
+size_t Allocator::getBlockSize(short level)
+{
+    return pow(2, level + MIN_POWER);
+}
+
+BorderDescriptor* Allocator::findFreeBlockOnCustomLevel(short level)
 {
     while (level <= levelsCount && countOfFreeBlocksOnLevel[level] == 0) level++;
 
     if (level > levelsCount) std::__throw_out_of_range("Out of allocator memory resource.");
 
-    MemoryBlock* foundBlock = blocksList[level];
+    BorderDescriptor* foundDescriptor = descriptorsList[level];
 
-    while (foundBlock->status != BlockStatus::Free)
-        foundBlock = foundBlock->next;
+    while (foundDescriptor->status != BlockStatus::Free)
+        foundDescriptor = foundDescriptor->next;
 
-    return foundBlock;
+    return foundDescriptor;
 }
 
-MemoryBlock* Allocator::splitOnBuddies(MemoryBlock* memoryBlock)
+BorderDescriptor* Allocator::splitOnBuddies(BorderDescriptor* splitDescriptor)
 {
-    short newLevel = memoryBlock->level - 1;
-    auto secondBuddy = new MemoryBlock(newLevel, blocksList[newLevel]);
-    auto firstBuddy = new MemoryBlock(newLevel, secondBuddy);
-    secondBuddy->buddy = firstBuddy;
-    firstBuddy->buddy = secondBuddy;
+    short newLevel = splitDescriptor->level - 1;
+    short firstBuddyIndex = splitDescriptor->indexOnLevel * 2;
 
-    if (blocksList[memoryBlock->level] == memoryBlock)
-        blocksList[memoryBlock->level] = memoryBlock->next;
+    BorderDescriptor* firstBuddy;
+    BorderDescriptor* secondBuddy;
 
-    if (memoryBlock->previous)
-        memoryBlock->previous->next = memoryBlock->next;
-    if (memoryBlock->next)
-        memoryBlock->next->previous = memoryBlock->previous;
+    if (countOfDescriptorsOnLevel[newLevel] < firstBuddyIndex)
+    {
+        firstBuddy = new BorderDescriptor(splitDescriptor->memoryBlock, newLevel, firstBuddyIndex);
+        auto pointerOnSecondHalfOfMemoryBlock = (void*)((size_t)splitDescriptor->memoryBlock + getBlockSize(newLevel));
+        secondBuddy = new BorderDescriptor(pointerOnSecondHalfOfMemoryBlock, newLevel, firstBuddyIndex + 1);
 
-    if (memoryBlock->buddy)
-        memoryBlock->buddy->buddy = nullptr;
+        firstBuddy->next = secondBuddy;
+        secondBuddy->previous = firstBuddy;
 
-    countOfFreeBlocksOnLevel[memoryBlock->level]--;
+        BorderDescriptor* lastDescriptorOnLevel = descriptorsList[newLevel];
+        while (lastDescriptorOnLevel != nullptr && lastDescriptorOnLevel->next != nullptr)
+            lastDescriptorOnLevel = lastDescriptorOnLevel->next;
 
-    delete(memoryBlock);
+        firstBuddy->previous = lastDescriptorOnLevel;
+        if (lastDescriptorOnLevel != nullptr)
+            lastDescriptorOnLevel->next = firstBuddy;
+
+        countOfDescriptorsOnLevel[newLevel] += 2;
+    }
+    else
+    {
+        firstBuddy = descriptorsList[newLevel];
+        while (firstBuddy->indexOnLevel != firstBuddyIndex)
+            firstBuddy = firstBuddy->next;
+        secondBuddy = firstBuddy->next;
+
+        firstBuddy->status = BlockStatus::Free;
+        secondBuddy->status = BlockStatus::Free;
+    }
+
+    countOfFreeBlocksOnLevel[newLevel] += 2;
+
+    splitDescriptor->status = BlockStatus::Split;
+    countOfFreeBlocksOnLevel[splitDescriptor->level]--;
 
     return firstBuddy;
 }
 
-MemoryBlock* Allocator::combineWithBuddy(MemoryBlock* memoryBlock)
+BorderDescriptor* Allocator::combineWithBuddy(BorderDescriptor* memoryBlock)
 {
     short newLevel = memoryBlock->level + 1;
-    auto unionBlock = new MemoryBlock(newLevel, blocksList[newLevel]);
-    unionBlock->buddy = blocksList[newLevel];
-
-    if (unionBlock->buddy)
-        unionBlock->buddy->previous = unionBlock;
-
-
+    BorderDescriptor* unionBlock;
+    // TODO
 }

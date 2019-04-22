@@ -4,7 +4,9 @@
 enum BlockStatus
 {
     Free,
-    Allocated
+    Reserved,
+    Split,
+    Unallocated,
 };
 
 #endif //BUDDYALLOCATOR_BLOCKSTATUS_H
