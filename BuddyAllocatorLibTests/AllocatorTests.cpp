@@ -10,5 +10,8 @@ public:
 
 TEST_F(AllocatorDefinition, empty_test)
 {
-    ASSERT_TRUE(true);
+    auto intPointer = (int*)allocator.Allocate(sizeof(int));
+    *intPointer = -15;
+    ASSERT_EQ(*intPointer, -15);
+    allocator.Free(intPointer);
 }

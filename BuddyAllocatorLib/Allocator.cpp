@@ -2,7 +2,6 @@
 #include "BlockStatus.h"
 #include <cmath>
 #include <iostream>
-#include <intrin.h>
 
 Allocator::Allocator(size_t pullSize)
 {
@@ -13,9 +12,9 @@ Allocator::Allocator(size_t pullSize)
     countOfDescriptorsOnLevel = new short[levelsCount];
     countOfFreeBlocksOnLevel = new short[levelsCount];
 
-    memoryPool = malloc((size_t)pow(2, levelsCount));
+    memoryPool = malloc(getBlockSize(levelsCount - 1));
 
-    descriptorsList[levelsCount - 1] = new BorderDescriptor(memoryPool, levelsCount, 0);
+    descriptorsList[levelsCount - 1] = new BorderDescriptor(memoryPool, levelsCount - 1, 0);
     countOfDescriptorsOnLevel[levelsCount - 1] = 1;
     countOfFreeBlocksOnLevel[levelsCount - 1] = 1;
 
@@ -25,6 +24,8 @@ Allocator::Allocator(size_t pullSize)
         countOfFreeBlocksOnLevel[i] = 0;
         countOfDescriptorsOnLevel[i] = 0;
     }
+
+    memoryDescriptorMap = { { memoryPool, descriptorsList[levelsCount - 1] } };
 }
 
 Allocator::~Allocator()
@@ -48,7 +49,7 @@ void* Allocator::Allocate(size_t size)
 
 void Allocator::Free(void* blockPointer)
 {
-    BorderDescriptor* exemptedBlock = (BorderDescriptor*)blockPointer - 1;
+    BorderDescriptor* exemptedBlock = memoryDescriptorMap[blockPointer];
     exemptedBlock->status = BlockStatus::Free;
 
     while (findAccessibleBuddyDescriptor(exemptedBlock) != nullptr)
@@ -74,7 +75,7 @@ BorderDescriptor* Allocator::findFreeBlockForCustomLevel(short level)
 {
     while (level <= levelsCount && countOfFreeBlocksOnLevel[level] == 0) level++;
 
-    if (level > levelsCount) std::__throw_out_of_range("Out of allocator memory resource.");
+    if (level >= levelsCount) std::__throw_out_of_range("Out of allocator memory resource.");
 
     BorderDescriptor* foundDescriptor = descriptorsList[level];
     while (foundDescriptor->status != BlockStatus::Free)
@@ -91,7 +92,7 @@ BorderDescriptor* Allocator::splitOnBuddies(BorderDescriptor* splitDescriptor)
     BorderDescriptor* firstBuddy;
     BorderDescriptor* secondBuddy;
 
-    if (countOfDescriptorsOnLevel[newLevel] < firstBuddyIndex)
+    if (countOfDescriptorsOnLevel[newLevel] <= firstBuddyIndex)
     {
         firstBuddy = new BorderDescriptor(splitDescriptor->memoryBlock, newLevel, firstBuddyIndex);
         auto pointerOnSecondHalfOfMemoryBlock = (void*)((size_t)splitDescriptor->memoryBlock + getBlockSize(newLevel));
@@ -107,6 +108,8 @@ BorderDescriptor* Allocator::splitOnBuddies(BorderDescriptor* splitDescriptor)
         firstBuddy->previous = lastDescriptorOnLevel;
         if (lastDescriptorOnLevel != nullptr)
             lastDescriptorOnLevel->next = firstBuddy;
+        else
+            descriptorsList[newLevel] = firstBuddy;
 
         countOfDescriptorsOnLevel[newLevel] += 2;
     }
@@ -122,6 +125,8 @@ BorderDescriptor* Allocator::splitOnBuddies(BorderDescriptor* splitDescriptor)
     }
 
     countOfFreeBlocksOnLevel[newLevel] += 2;
+    memoryDescriptorMap.insert_or_assign(firstBuddy->memoryBlock, firstBuddy);
+    memoryDescriptorMap.insert_or_assign(secondBuddy->memoryBlock, secondBuddy);
 
     splitDescriptor->status = BlockStatus::Split;
     countOfFreeBlocksOnLevel[splitDescriptor->level]--;
@@ -134,14 +139,15 @@ BorderDescriptor* Allocator::findAccessibleBuddyDescriptor(BorderDescriptor* des
     BorderDescriptor* buddyDescriptor = descriptor->indexOnLevel % 2 == 0 ? descriptor->next : descriptor->previous;
 
     if (buddyDescriptor == nullptr || buddyDescriptor->status != BlockStatus::Free) return nullptr;
+
+    return buddyDescriptor;
 }
 
 BorderDescriptor* Allocator::tryToCombineWithBuddy(BorderDescriptor* descriptor)
 {
     BorderDescriptor* buddyDescriptor = findAccessibleBuddyDescriptor(descriptor);
 
-    if (descriptor->status != BlockStatus::Free || buddyDescriptor == nullptr)
-        return nullptr;
+    if (descriptor->status != BlockStatus::Free || buddyDescriptor == nullptr) return nullptr;
 
     short parentBlockLevel = descriptor->level + 1;
     BorderDescriptor* parentDescriptor = descriptorsList[parentBlockLevel];
@@ -151,6 +157,8 @@ BorderDescriptor* Allocator::tryToCombineWithBuddy(BorderDescriptor* descriptor)
     descriptor->status = BlockStatus::Unallocated;
     buddyDescriptor->status = BlockStatus::Unallocated;
     parentDescriptor->status = BlockStatus::Free;
+
+    memoryDescriptorMap.insert_or_assign(parentDescriptor->memoryBlock, parentDescriptor);
 
     return parentDescriptor;
 }

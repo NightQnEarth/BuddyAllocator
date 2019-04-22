@@ -4,6 +4,7 @@
 
 #include "BorderDescriptor.h"
 #include <cstddef>
+#include <map>
 
 class Allocator
 {
@@ -23,6 +24,7 @@ private:
     BorderDescriptor** descriptorsList;
     short* countOfDescriptorsOnLevel;
     short* countOfFreeBlocksOnLevel;
+    std::map<void*, BorderDescriptor*> memoryDescriptorMap;
 
     static short getNecessaryLevel(size_t memorySize);
     static size_t getBlockSize(short level);
