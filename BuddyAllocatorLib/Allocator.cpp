@@ -60,14 +60,13 @@ size_t Allocator::getBlockSize(short level)
     return pow(2, level + MIN_POWER);
 }
 
-BorderDescriptor* Allocator::findFreeBlockOnCustomLevel(short level)
+BorderDescriptor* Allocator::findFreeBlockForCustomLevel(short level)
 {
     while (level <= levelsCount && countOfFreeBlocksOnLevel[level] == 0) level++;
 
     if (level > levelsCount) std::__throw_out_of_range("Out of allocator memory resource.");
 
     BorderDescriptor* foundDescriptor = descriptorsList[level];
-
     while (foundDescriptor->status != BlockStatus::Free)
         foundDescriptor = foundDescriptor->next;
 
@@ -120,9 +119,20 @@ BorderDescriptor* Allocator::splitOnBuddies(BorderDescriptor* splitDescriptor)
     return firstBuddy;
 }
 
-BorderDescriptor* Allocator::combineWithBuddy(BorderDescriptor* memoryBlock)
+BorderDescriptor* Allocator::tryToCombineWithBuddy(BorderDescriptor* descriptor)
 {
-    short newLevel = memoryBlock->level + 1;
-    BorderDescriptor* unionBlock;
-    // TODO
+    BorderDescriptor* buddyDescriptor = descriptor->indexOnLevel % 2 == 0 ? descriptor->next : descriptor->previous;
+
+    if (descriptor->status != BlockStatus::Free || buddyDescriptor->status != BlockStatus::Free) return nullptr;
+
+    short parentBlockLevel = descriptor->level + 1;
+    BorderDescriptor* parentDescriptor = descriptorsList[parentBlockLevel];
+    while (parentDescriptor->indexOnLevel != descriptor->indexOnLevel / 2)
+        parentDescriptor = parentDescriptor->next;
+
+    descriptor->status = BlockStatus::Unallocated;
+    buddyDescriptor->status = BlockStatus::Unallocated;
+    parentDescriptor->status = BlockStatus::Free;
+
+    return parentDescriptor;
 }

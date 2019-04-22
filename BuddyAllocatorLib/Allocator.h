@@ -26,9 +26,9 @@ private:
 
     static short getNecessaryLevel(size_t memorySize);
     static size_t getBlockSize(short level);
-    BorderDescriptor* findFreeBlockOnCustomLevel(short level);
+    BorderDescriptor* findFreeBlockForCustomLevel(short level);
     BorderDescriptor* splitOnBuddies(BorderDescriptor* splitDescriptor);
-    BorderDescriptor* combineWithBuddy(BorderDescriptor* memoryBlock);
+    BorderDescriptor* tryToCombineWithBuddy(BorderDescriptor* descriptor);
 };
 
 #endif //BUDDYALLOCATOR_ALLOCATOR_H
