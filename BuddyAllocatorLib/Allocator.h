@@ -33,4 +33,5 @@ private:
     BorderDescriptor* tryToCombineWithBuddy(BorderDescriptor* descriptor);
 };
 
+
 #endif //BUDDYALLOCATOR_ALLOCATOR_H
