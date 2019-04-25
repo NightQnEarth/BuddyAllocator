@@ -63,14 +63,7 @@ void Allocator::Dump()
 {
     using namespace std;
 
-    map<BlockStatus, string> statusStringMap = {
-            { BlockStatus::Free, "F" },
-            { BlockStatus::Reserved, "R" },
-            { BlockStatus::Split, "S" },
-            { BlockStatus::Unallocated, "U" }
-    };
-
-    auto blockLength = [](size_t level) -> size_t { return (getBlockSize(level) / getBlockSize(0)) * 2 + 1; };
+    auto blockLength = [](size_t level) -> size_t { return (getBlockSize(level) / getBlockSize(0)) * 2; };
 
     for (int level = levelsCount - 1; level >= 0; --level)
     {
@@ -79,23 +72,23 @@ void Allocator::Dump()
         BorderDescriptor* descriptor = descriptorsList[level];
 
         if (descriptor != nullptr)
-            cout << setfill('-') << setw(blockLength(levelsCount - 1)) << "-" << endl << setfill(' ');
+            cout << setfill('-') << setw(blockLength(levelsCount - 1) + 1) << "-" << endl << setfill(' ');
 
         while (descriptor != nullptr)
         {
-            cout << '|' << setw(blockLength(descriptor->level) / 2) << statusStringMap[descriptor->status];
-            size_t width = blockLength(descriptor->level) / 2 - statusStringMap[descriptor->status].length();
-            cout << setw(width) << (width > 0 ? " " : "");
+            size_t halfLength = blockLength(descriptor->level) / 2;
+            cout << '|' << setw(halfLength) << static_cast<char>(descriptor->status);
+            cout << setw(halfLength - 1) << (halfLength - 1 > 0 ? " " : "");
 
             descriptor = descriptor->next;
         }
         cout << '|';
-        size_t width = blockLength(levelsCount - 1) - blockLength(level) * countOfDescriptorsOnLevel[level] + 1;
-        if (width > 1) cout << setw(width) << '|';
+        size_t rest = blockLength(levelsCount - 1) - blockLength(level) * countOfDescriptorsOnLevel[level];
+        if (rest > 0) cout << setw(rest) << '|';
         cout << " Level: " << level << ", size of one block: " << getBlockSize(level) << " bytes" << endl;
     }
 
-    cout << setfill('-') << setw(blockLength(levelsCount - 1)) << "-" << endl << setfill(' ');
+    cout << setfill('-') << setw(blockLength(levelsCount - 1) + 1) << "-" << endl << setfill(' ');
 }
 
 short Allocator::getNecessaryLevel(size_t memorySize)
