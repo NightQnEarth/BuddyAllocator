@@ -8,7 +8,8 @@
 
 #define DUMP_OUTPUT
 
-TEST(AllocatorTest, AllocateMinBlock) {
+TEST(AllocatorTest, AllocateMinBlock)
+{
     Allocator allocator(MB);
 
     auto intPointer = (int*)allocator.Allocate(1);
@@ -22,7 +23,8 @@ TEST(AllocatorTest, AllocateMinBlock) {
     ASSERT_EQ(*intPointer, 15);
 }
 
-TEST(AllocatorTest, AllocateMaxBlock) {
+TEST(AllocatorTest, AllocateMaxBlock)
+{
     Allocator allocator(MB);
 
     void* memoryPointer = allocator.Allocate(MB);
@@ -33,7 +35,8 @@ TEST(AllocatorTest, AllocateMaxBlock) {
 #endif
 }
 
-TEST(AllocatorTest, ThrowOnZeroAllocationRequest) {
+TEST(AllocatorTest, ThrowOnZeroAllocationRequest)
+{
     ASSERT_THROW(Allocator(0), std::out_of_range);
 
     Allocator allocator(MB);
@@ -45,7 +48,8 @@ TEST(AllocatorTest, ThrowOnZeroAllocationRequest) {
 #endif
 }
 
-TEST(AllocatorTest, AllocateTwoDifferentlyBlocks) {
+TEST(AllocatorTest, AllocateBigBlockAfterSmall)
+{
     Allocator allocator(TWO_MB);
 
     void* firstBlock = allocator.Allocate(40);
@@ -59,7 +63,28 @@ TEST(AllocatorTest, AllocateTwoDifferentlyBlocks) {
 #endif
 }
 
-TEST(AllocatorTest, ThrowOnTooBigAllocationRequest) {
+TEST(AllocatorTest, AllocateSmallBlockAfterBigThenFreeBigBlockAndAllocateOneMoreSmall)
+{
+    Allocator allocator(MB);
+    void* bigBlock = allocator.Allocate(256);
+    allocator.Allocate(128);
+    allocator.Allocate(128);
+
+    allocator.Free(bigBlock);
+
+#ifdef DUMP_OUTPUT
+    allocator.Dump();
+#endif
+
+    ASSERT_NO_THROW(allocator.Allocate(128));
+
+#ifdef DUMP_OUTPUT
+    allocator.Dump();
+#endif
+}
+
+TEST(AllocatorTest, ThrowOnTooBigAllocationRequest)
+{
     Allocator allocator(MB);
 
     ASSERT_THROW(allocator.Allocate(MB + 1), std::out_of_range);
@@ -69,7 +94,8 @@ TEST(AllocatorTest, ThrowOnTooBigAllocationRequest) {
 #endif
 }
 
-TEST(AllocatorTest, AllocateMaxSmallBlocksCount) {
+TEST(AllocatorTest, AllocateMaxSmallBlocksCount)
+{
     Allocator allocator(MB);
 
     size_t maxSmallBlocksCount = MB / (size_t)pow(2, MIN_POWER);
@@ -82,7 +108,8 @@ TEST(AllocatorTest, AllocateMaxSmallBlocksCount) {
 #endif
 }
 
-TEST(AllocatorTest, AllocateMaxSmallBlocksCountThenFreeHalfAndAllocateAgain) {
+TEST(AllocatorTest, AllocateMaxSmallBlocksCountThenFreeHalfAndAllocateAgain)
+{
     Allocator allocator(MB);
 
     size_t maxSmallBlocksCount = MB / (size_t)pow(2, MIN_POWER);
@@ -102,7 +129,8 @@ TEST(AllocatorTest, AllocateMaxSmallBlocksCountThenFreeHalfAndAllocateAgain) {
 #endif
 }
 
-TEST(AllocatorTest, AllocateTooMuchBlocks) {
+TEST(AllocatorTest, AllocateTooMuchBlocks)
+{
     Allocator allocator(MB);
 
     size_t maxSmallBlocksCount = MB / (size_t)pow(2, MIN_POWER);
@@ -113,7 +141,8 @@ TEST(AllocatorTest, AllocateTooMuchBlocks) {
     ASSERT_THROW(allocator.Allocate(1), std::out_of_range);
 }
 
-TEST(AllocatorTest, AllocateBlockSizeMoreThanOneStandardPage) {
+TEST(AllocatorTest, AllocateBlockSizeMoreThanOneStandardPage)
+{
     Allocator allocator(TEN_MB);
 
     ASSERT_TRUE(allocator.Allocate(TEN_MB) != nullptr);

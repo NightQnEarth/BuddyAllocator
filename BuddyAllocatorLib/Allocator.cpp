@@ -69,6 +69,8 @@ void Allocator::Dump()
     {
         if (countOfDescriptorsOnLevel[level] == 0) continue;
 
+        short drawnBlocksCount = 0;
+        size_t rest = 0;
         BorderDescriptor* descriptor = descriptorsList[level];
 
         if (descriptor != nullptr)
@@ -76,14 +78,23 @@ void Allocator::Dump()
 
         while (descriptor != nullptr)
         {
+            short stabSpacesCount = blockLength(descriptor->level) * (descriptor->indexOnLevel - drawnBlocksCount);
+            if (stabSpacesCount > 0 && descriptor->indexOnLevel % 2 == 0)
+            {
+                cout << '|' << setw(stabSpacesCount - 1) << " ";
+                rest -= stabSpacesCount;
+            }
+
             size_t halfLength = blockLength(descriptor->level) / 2;
             cout << '|' << setw(halfLength) << static_cast<char>(descriptor->status);
             cout << setw(halfLength - 1) << (halfLength - 1 > 0 ? " " : "");
 
+            drawnBlocksCount++;
             descriptor = descriptor->next;
         }
+
         cout << '|';
-        size_t rest = blockLength(levelsCount - 1) - blockLength(level) * countOfDescriptorsOnLevel[level];
+        rest += blockLength(levelsCount - 1) - blockLength(level) * countOfDescriptorsOnLevel[level];
         if (rest > 0) cout << setw(rest) << '|';
         cout << " Level: " << level << ", size of one block: " << getBlockSize(level) << " bytes" << endl;
     }
@@ -123,7 +134,11 @@ BorderDescriptor* Allocator::splitOnBuddies(BorderDescriptor* splitDescriptor)
     BorderDescriptor* firstBuddy;
     BorderDescriptor* secondBuddy;
 
-    if (countOfDescriptorsOnLevel[newLevel] <= firstBuddyIndex)
+    firstBuddy = descriptorsList[newLevel];
+    while (firstBuddy != nullptr && firstBuddy->indexOnLevel != firstBuddyIndex)
+        firstBuddy = firstBuddy->next;
+
+    if (firstBuddy == nullptr)
     {
         firstBuddy = new BorderDescriptor(splitDescriptor->memoryBlock, newLevel, firstBuddyIndex);
         auto pointerOnSecondHalfOfMemoryBlock = (void*)((size_t)splitDescriptor->memoryBlock + getBlockSize(newLevel));
@@ -132,23 +147,28 @@ BorderDescriptor* Allocator::splitOnBuddies(BorderDescriptor* splitDescriptor)
         firstBuddy->next = secondBuddy;
         secondBuddy->previous = firstBuddy;
 
-        BorderDescriptor* lastDescriptorOnLevel = descriptorsList[newLevel];
-        while (lastDescriptorOnLevel != nullptr && lastDescriptorOnLevel->next != nullptr)
-            lastDescriptorOnLevel = lastDescriptorOnLevel->next;
+        BorderDescriptor* neighbourDescriptor = descriptorsList[newLevel];
+        while (getNeighbourDescriptor(neighbourDescriptor, firstBuddy) != nullptr)
+            neighbourDescriptor = getNeighbourDescriptor(neighbourDescriptor, firstBuddy);
 
-        firstBuddy->previous = lastDescriptorOnLevel;
-        if (lastDescriptorOnLevel != nullptr)
-            lastDescriptorOnLevel->next = firstBuddy;
-        else
+        if (neighbourDescriptor == nullptr)
             descriptorsList[newLevel] = firstBuddy;
+        else if (neighbourDescriptor->indexOnLevel < firstBuddy->indexOnLevel)
+        {
+            neighbourDescriptor->next = firstBuddy;
+            firstBuddy->previous = neighbourDescriptor;
+        }
+        else
+        {
+            secondBuddy->next = neighbourDescriptor;
+            neighbourDescriptor->previous = secondBuddy;
+            descriptorsList[newLevel] = firstBuddy;
+        }
 
         countOfDescriptorsOnLevel[newLevel] += 2;
     }
     else
     {
-        firstBuddy = descriptorsList[newLevel];
-        while (firstBuddy->indexOnLevel != firstBuddyIndex)
-            firstBuddy = firstBuddy->next;
         secondBuddy = firstBuddy->next;
 
         firstBuddy->status = BlockStatus::Free;
@@ -163,6 +183,12 @@ BorderDescriptor* Allocator::splitOnBuddies(BorderDescriptor* splitDescriptor)
     countOfFreeBlocksOnLevel[splitDescriptor->level]--;
 
     return firstBuddy;
+}
+
+BorderDescriptor* Allocator::getNeighbourDescriptor(BorderDescriptor* startDescriptor, BorderDescriptor* descriptor)
+{
+    if (startDescriptor == nullptr) return nullptr;
+    return startDescriptor->indexOnLevel < descriptor->indexOnLevel ? startDescriptor->next : startDescriptor->previous;
 }
 
 BorderDescriptor* Allocator::findAccessibleBuddyDescriptor(BorderDescriptor* descriptor)
