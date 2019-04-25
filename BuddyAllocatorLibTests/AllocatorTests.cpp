@@ -7,10 +7,6 @@
 #define TEN_MB 40960
 
 #define DUMP_OUTPUT
-// BlockStatus::Free :          'F'
-// BlockStatus::Reserved :      'R'
-// BlockStatus::Split :         'S'
-// BlockStatus::Unallocated :   'U'
 
 TEST(AllocatorTest, AllocateMinBlock) {
     Allocator allocator(MB);
