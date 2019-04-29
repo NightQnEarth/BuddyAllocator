@@ -4,7 +4,6 @@
 
 #define MB 1024
 #define TWO_MB 2048
-#define TEN_MB 40960
 
 #define DUMP_OUTPUT
 
@@ -143,9 +142,9 @@ TEST(AllocatorTest, AllocateTooMuchBlocks)
 
 TEST(AllocatorTest, AllocateBlockSizeMoreThanOneStandardPage)
 {
-    Allocator allocator(TEN_MB);
+    Allocator allocator(40 * MB);
 
-    ASSERT_TRUE(allocator.Allocate(TEN_MB) != nullptr);
+    ASSERT_TRUE(allocator.Allocate(40 * MB) != nullptr);
 
 #ifdef DUMP_OUTPUT
     allocator.Dump();
