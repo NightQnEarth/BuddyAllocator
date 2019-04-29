@@ -3,8 +3,6 @@
 #include "../BuddyAllocatorLib/Allocator.h"
 
 #define MB 1024
-#define TWO_MB 2048
-
 #define DUMP_OUTPUT
 
 TEST(AllocatorTest, AllocateMinBlock)
@@ -49,7 +47,7 @@ TEST(AllocatorTest, ThrowOnZeroAllocationRequest)
 
 TEST(AllocatorTest, AllocateBigBlockAfterSmall)
 {
-    Allocator allocator(TWO_MB);
+    Allocator allocator(2 * MB);
 
     void* firstBlock = allocator.Allocate(40);
     ASSERT_TRUE(firstBlock != nullptr);
