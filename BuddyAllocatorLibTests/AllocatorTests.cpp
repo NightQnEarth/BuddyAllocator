@@ -10,7 +10,7 @@ TEST(AllocatorTest, AllocateMinBlock)
     Allocator allocator(MB);
 
     auto intPointer = (int*)allocator.Allocate(1);
-    ASSERT_TRUE(intPointer != nullptr);
+    ASSERT_NE(intPointer, nullptr);
 
 #ifdef DUMP_OUTPUT
     allocator.Dump();
@@ -25,7 +25,7 @@ TEST(AllocatorTest, AllocateMaxBlock)
     Allocator allocator(MB);
 
     void* memoryPointer = allocator.Allocate(MB);
-    ASSERT_TRUE(memoryPointer != nullptr);
+    ASSERT_NE(memoryPointer, nullptr);
 
 #ifdef DUMP_OUTPUT
     allocator.Dump();
@@ -50,10 +50,10 @@ TEST(AllocatorTest, AllocateBigBlockAfterSmall)
     Allocator allocator(2 * MB);
 
     void* firstBlock = allocator.Allocate(40);
-    ASSERT_TRUE(firstBlock != nullptr);
+    ASSERT_NE(firstBlock, nullptr);
 
     void* secondBlock = allocator.Allocate(260);
-    ASSERT_TRUE(secondBlock != nullptr);
+    ASSERT_NE(secondBlock, nullptr);
 
 #ifdef DUMP_OUTPUT
     allocator.Dump();
@@ -126,7 +126,7 @@ TEST(AllocatorTest, AllocateMaxSmallBlocksCountThenFreeHalfAndAllocateAgain)
 #endif
 }
 
-TEST(AllocatorTest, AllocateTooMuchBlocks)
+TEST(AllocatorTest, AllocateTooManyBlocks)
 {
     Allocator allocator(MB);
 
@@ -142,7 +142,7 @@ TEST(AllocatorTest, AllocateBlockSizeMoreThanOneStandardPage)
 {
     Allocator allocator(40 * MB);
 
-    ASSERT_TRUE(allocator.Allocate(40 * MB) != nullptr);
+    ASSERT_NE(allocator.Allocate(40 * MB), nullptr);
 
 #ifdef DUMP_OUTPUT
     allocator.Dump();
